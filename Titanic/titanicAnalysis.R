@@ -1,29 +1,45 @@
 #Get needed libraries
 require(ggplot2)
 require(Amelia)
+require(Hmisc)
+options(digits = 2)
 
 #Read in the training data
 setwd('C:\\Users\\bcorwin\\Kaggle\\Titanic')
-train <- read.csv('.\\Raw Data\\train.csv')
+train <- read.csv('.\\Raw Data\\train.csv',
+                  colClasses = c('integer',
+                                  'factor',
+                                  'factor',
+                                  'character',
+                                  'factor',
+                                  'numeric',
+                                  'integer',
+                                  'integer',
+                                  'character',
+                                  'numeric',
+                                  'character',
+                                  'factor'),
+                  na.strings = c("NA", "")
+                  )
 attach(train)
-train$Survived <- as.factor(Survived)
 missmap(train, main="Titanic Training Data - Missings Map",
-        col=c("yellow", "black"), legend=FALSE)
+        col=c("yellow", "black"), legend=FALSE, y.labels = NULL, y.at = NULL)
 
 #Look at each variable
-prop.table(table(Survived,Pclass),2) ##Biggest different is in Upper/Lower class
-prop.table(table(Survived,Sex),2) ##Big female/male split
-ggplot(train, aes(Age, colour = Survived)) + geom_density() ##Bump at around 10 years, split here for young/old
-prop.table(table(Survived,SibSp),2) ##No siblings, biggest division, less occurance of many siblings
-prop.table(table(Survived,Parch),2) ##No parch biggest division
-##Ticket
+mosaicplot(Pclass ~ Survived, main = "Fate by Traveling Class", color = TRUE)
+mosaicplot(Sex ~ Survived, main = "Fate by Sex", color = TRUE)
+mosaicplot(SibSp ~ Survived, main = "Fate by Sibling/Spouse Count", color = TRUE)
+mosaicplot(Parch ~ Survived, main = "Fate by Parent/Child Count", color = TRUE)
+mosaicplot(Embarked ~ Survived, main = "Fate by Embarkment", color = TRUE)
+ggplot(train, aes(Age, colour = Survived)) + geom_density()
 ggplot(train, aes(Fare, colour = Survived)) + geom_density()
-prop.table(table(Survived,Embarked),2)
-)
 
-#Build new vars
-train$econClass <- ifelse(Pclass == 1, "upper", ifelse(Pclass == 2, "middle", "lower"))
-train$ageGrp <- ifelse(Age <= 10, "young", "old")
-train$onlyCld <- ifelse(SibSp == 0, "only child", "not only child")
-train$onlyParch <- ifelse(Parch == 0, "only parch", "not only parch")
-train$alone <- ifelse(SibSp == 0 & Parch ==0, "alone", "not alone")
+#Imputation
+##Age
+title.dot.start <- regexpr("\\,[A-Z ]{1,20}\\.", Name, TRUE)
+title.comma.end <- title.dot.start + attr(title.dot.start, "match.length")-1
+train$Title <- substr(Name, title.dot.start+2, title.comma.end-1)
+
+##Embarkment
+
+#Random Forest
